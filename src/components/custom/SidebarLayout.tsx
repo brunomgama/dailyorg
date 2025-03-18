@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
+import {TbCalendar, TbShoppingCart} from "react-icons/tb";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -9,9 +10,9 @@ const SidebarLayout = () => {
     const [open, setOpen] = useState(false); // Initially collapsed
 
     const links = [
-        { label: "Dashboard", href: "#", icon: <LayoutDashboard className="h-5 w-5" /> },
-        { label: "Profile", href: "#", icon: <UserCog className="h-5 w-5" /> },
-        { label: "Settings", href: "#", icon: <Settings className="h-5 w-5" /> },
+        { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { label: "Calendar", href: "/calendar", icon: <TbCalendar className="h-5 w-5" /> },
+        { label: "Shopping", href: "/shopping", icon: <TbShoppingCart className="h-5 w-5" /> },
         { label: "Logout", href: "#", icon: <LogOut className="h-5 w-5" /> },
     ];
 
