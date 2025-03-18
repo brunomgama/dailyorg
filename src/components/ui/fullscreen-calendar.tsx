@@ -20,13 +20,16 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     PlusCircleIcon,
-    SearchIcon,
 } from "lucide-react"
-
 import { cn } from "@/lib/utils"
+import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import {useState} from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface Event {
     id: number
@@ -44,6 +47,11 @@ interface FullScreenCalendarProps {
     data: CalendarData[]
 }
 
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 const colStartClasses = [
     "",
     "col-start-2",
@@ -57,12 +65,15 @@ const colStartClasses = [
 export function FullScreenCalendar({ data }: FullScreenCalendarProps) {
     const today = startOfToday()
     const [selectedDay, setSelectedDay] = React.useState(today)
-    const [currentMonth, setCurrentMonth] = React.useState(
-        format(today, "MMM-yyyy"),
-    )
+    const [currentMonth, setCurrentMonth] = React.useState(format(today, "MMM-yyyy"))
     const firstDayCurrentMonth = parse(currentMonth, "MMM-yyyy", new Date())
     const isDesktop = useMediaQuery("(min-width: 768px)")
-
+    const [modalOpen, setModalOpen] = useState(false)
+    const [eventData, setEventData] = useState({
+        name: "",
+        time: "",
+        datetime: "",
+    })
     const days = eachDayOfInterval({
         start: startOfWeek(firstDayCurrentMonth),
         end: endOfWeek(endOfMonth(firstDayCurrentMonth)),
@@ -80,6 +91,50 @@ export function FullScreenCalendar({ data }: FullScreenCalendarProps) {
 
     function goToToday() {
         setCurrentMonth(format(today, "MMM-yyyy"))
+    }
+
+    async function fetchEvents() {
+        const { data, error } = await supabase.from("events").select("*");
+        if (error) {
+            console.error("Error fetching events:", error);
+        } else {
+            console.log("Fetched events:", data);
+        }
+    }
+
+    async function handleSaveEvent(e: React.FormEvent) {
+        e.preventDefault()
+
+        function formatTimeTo12Hour(time: string) {
+            const [hours, minutes] = time.split(":").map(Number);
+            const period = hours >= 12 ? "PM" : "AM";
+            const formattedHours = hours % 12 || 12;
+            return `${formattedHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+        }
+
+        const formattedDay = eventData.datetime.split("T")[0];
+        const formattedTime = formatTimeTo12Hour(eventData.time);
+
+        const { data, error } = await supabase
+            .from("events")
+            .insert([
+                {
+                    name: eventData.name,
+                    time: formattedTime,
+                    day: formattedDay,
+                    datetime: eventData.datetime,
+                },
+            ])
+
+        if (error) {
+            console.error("Error saving event:", error);
+        } else {
+            console.log("Event saved successfully:", data);
+            setModalOpen(false);
+            setEventData({ name: "", time: "", datetime: "" });
+            fetchEvents();
+            window.location.reload();
+        }
     }
 
     return (
@@ -109,50 +164,66 @@ export function FullScreenCalendar({ data }: FullScreenCalendarProps) {
                 </div>
 
                 <div className="flex flex-col items-center gap-4 md:flex-row md:gap-6">
-                    {/*<Button variant="outline" size="icon" className="hidden lg:flex">*/}
-                    {/*    <SearchIcon size={16} strokeWidth={2} aria-hidden="true" />*/}
-                    {/*</Button>*/}
-
                     <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
                     <div className="inline-flex w-full -space-x-px rounded-lg shadow-sm shadow-black/5 md:w-auto rtl:space-x-reverse">
-                        <Button
-                            onClick={previousMonth}
-                            className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
-                            variant="outline"
-                            size="icon"
-                            aria-label="Navigate to previous month"
-                        >
+                        <Button onClick={previousMonth} variant="outline" size="icon">
                             <ChevronLeftIcon size={16} strokeWidth={2} aria-hidden="true" />
                         </Button>
-                        <Button
-                            onClick={goToToday}
-                            className="w-full rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10 md:w-auto"
-                            variant="outline"
-                        >
+                        <Button onClick={goToToday} variant="outline">
                             Today
                         </Button>
-                        <Button
-                            onClick={nextMonth}
-                            className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
-                            variant="outline"
-                            size="icon"
-                            aria-label="Navigate to next month"
-                        >
+                        <Button onClick={nextMonth} variant="outline" size="icon">
                             <ChevronRightIcon size={16} strokeWidth={2} aria-hidden="true" />
                         </Button>
                     </div>
 
-                    <Separator orientation="vertical" className="hidden h-6 md:block" />
-                    <Separator
-                        orientation="horizontal"
-                        className="block w-full md:hidden"
-                    />
-
-                    <Button className="w-full gap-2 md:w-auto">
-                        <PlusCircleIcon size={16} strokeWidth={2} aria-hidden="true" />
-                        <span>New Event</span>
-                    </Button>
+                    {/* New Event Button with Modal */}
+                    <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="w-full gap-2 md:w-auto">
+                                <PlusCircleIcon size={16} strokeWidth={2} aria-hidden="true" />
+                                <span>New Event</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create New Event</DialogTitle>
+                            </DialogHeader>
+                            <form className="space-y-4" onSubmit={handleSaveEvent}>
+                                <div>
+                                    <Label htmlFor="event-name">Event Name</Label>
+                                    <Input
+                                        id="event-name"
+                                        placeholder="Enter event name"
+                                        value={eventData.name}
+                                        onChange={(e) => setEventData({ ...eventData, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="event-time">Time</Label>
+                                    <Input
+                                        type="time"
+                                        id="event-time"
+                                        value={eventData.time}
+                                        onChange={(e) => setEventData({ ...eventData, time: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="event-date">Date</Label>
+                                    <Input
+                                        type="date"
+                                        id="event-date"
+                                        value={eventData.datetime}
+                                        onChange={(e) => setEventData({ ...eventData, datetime: e.target.value })}
+                                    />
+                                </div>
+                                <Button type="submit" className="w-full">
+                                    Save Event
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
