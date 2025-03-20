@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import SidebarLayout from "@/components/custom/SidebarLayout";
-import Calendar from '@/components/CalendarComponent'
+import Calendar from '@/components/custom/CalendarComponent'
 
 const PageCalendarHome = () => {
     return (

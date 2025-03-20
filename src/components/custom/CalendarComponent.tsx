@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Calendar from './calendar/calendar'
-import { CalendarEvent, Mode } from './calendar/calendar-types'
+import Calendar from '../calendar/calendar'
+import { CalendarEvent, Mode } from '../calendar/calendar-types'
 import { supabase } from "@/lib/supabase";
-import {generateMockEvents} from "@/lib/mock-calendar-events";
 
 export default function CalendarComponent() {
   const [events, setEvents] = useState<CalendarEvent[]>([])

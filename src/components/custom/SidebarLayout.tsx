@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { LayoutDashboard, LogOut } from "lucide-react";
-import {TbCalendar, TbShoppingCart} from "react-icons/tb";
+import { LayoutDashboard } from "lucide-react";
+import {TbAlignBoxLeftStretch, TbCalendar, TbShoppingCart} from "react-icons/tb";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +11,9 @@ const SidebarLayout = () => {
 
     const links = [
         { label: "Dashboard", href: "/", icon: <LayoutDashboard className="h-5 w-5" /> },
+        { label: "Tasks", href: "/tasks", icon: <TbAlignBoxLeftStretch className="h-5 w-5" /> },
         { label: "Calendar", href: "/calendar", icon: <TbCalendar className="h-5 w-5" /> },
         { label: "Shopping", href: "/shopping", icon: <TbShoppingCart className="h-5 w-5" /> },
-        { label: "Logout", href: "#", icon: <LogOut className="h-5 w-5" /> },
     ];
 
     return (
